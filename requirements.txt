@@ -1,0 +1,8 @@
+datasets
+torch
+pundas
+numpy
+opencv-python
+scikit-learn
+torchvision
+glob2
