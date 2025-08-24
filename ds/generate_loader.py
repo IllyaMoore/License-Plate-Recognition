@@ -12,11 +12,11 @@ from utils import create_dataloader
 
 path = r'B:\VLPR\ds\data'
 
-print(dir(utils))
+def dataloaders():
+    full_dataset = GenerateDataset(collect_image_paths(path), split_data=True, test_size=0.2)
 
-full_dataset = GenerateDataset(collect_image_paths(path), split_data=True, test_size=0.2)
+    train_dataset = full_dataset.get_train_dataset()
+    test_dataset = full_dataset.get_test_dataset()
 
-train_dataset = full_dataset.get_train_dataset()
-test_dataset = full_dataset.get_test_dataset()
-
-trainloader, testloader = create_dataloader(train_dataset, test_dataset)
+    trainloader, testloader = create_dataloader(train_dataset, test_dataset)
+    return trainloader, testloader
