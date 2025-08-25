@@ -26,6 +26,12 @@ def collect_image_paths(base_folder, ext="*.jpg"):
         image_paths.extend(glob.glob(os.path.join(folder, ext)))
     return image_paths
 
+def get_imgs_resolutions(path):
+    s = set()
+    for i in collect_image_paths(path):
+        s.add(Image.open(i).size)
+    return s
+
 def create_dataloader(trainds, testds):
     
     trainloader = torch.utils.data.DataLoader(trainds, batch_size=64, shuffle=True)
