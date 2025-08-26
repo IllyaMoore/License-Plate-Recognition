@@ -39,21 +39,63 @@ def create_dataloader(trainds, testds):
     
     return trainloader, testloader
     
+# class GenerateDataset(Dataset):
+#     def __init__(self, paths, labels=None, transform=None, split_data=False, test_size=0.2, random_state=42):
+#         if split_data:
+#             if labels is not None:
+#                 self.train_paths, self.test_paths, self.train_labels, self.test_labels = train_test_split(
+#                     paths, labels, test_size=test_size, random_state=random_state
+#                 )
+#             else:
+#                 self.train_paths, self.test_paths = train_test_split(
+#                     paths, test_size=test_size, random_state=random_state
+#                 )
+#                 self.train_labels, self.test_labels = None, None
+#         else:
+#             self.paths = paths
+#             self.labels = labels
+        
+#         self.split_data = split_data
+        
+#         if transform is None:
+#             self.transform = transforms.Compose([
+#                 transforms.ToTensor(),
+#                 transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+#                                      std=[0.229, 0.224, 0.225]),
+#             ])
+#         else:
+#             self.transform = transform
+
+#     def get_train_dataset(self):
+#         if not self.split_data:
+#             raise ValueError("ERROR_01")
+#         return GenerateDataset(self.train_paths, self.train_labels, self.transform, split_data=False)
+    
+#     def get_test_dataset(self):
+#         if not self.split_data:
+#             raise ValueError("ERROR_02")
+#         return GenerateDataset(self.test_paths, self.test_labels, self.transform, split_data=False)
+
+#     def __len__(self):
+#         return len(self.paths)
+
+#     def __getitem__(self, idx):
+#         img = Image.open(self.paths[idx]).convert("RGB")
+#         if self.transform:
+#             img = self.transform(img)
+#         if self.labels is not None:
+#             return img, self.labels[idx]
+#         return img
+
+
 class GenerateDataset(Dataset):
-    def __init__(self, paths, labels=None, transform=None, split_data=False, test_size=0.2, random_state=42):
+    def __init__(self, paths, transform=None, split_data=False, test_size=0.2, random_state=42):
         if split_data:
-            if labels is not None:
-                self.train_paths, self.test_paths, self.train_labels, self.test_labels = train_test_split(
-                    paths, labels, test_size=test_size, random_state=random_state
-                )
-            else:
-                self.train_paths, self.test_paths = train_test_split(
-                    paths, test_size=test_size, random_state=random_state
-                )
-                self.train_labels, self.test_labels = None, None
+            self.train_paths, self.test_paths = train_test_split(
+                paths, test_size=test_size, random_state=random_state
+            )
         else:
             self.paths = paths
-            self.labels = labels
         
         self.split_data = split_data
         
@@ -69,23 +111,31 @@ class GenerateDataset(Dataset):
     def get_train_dataset(self):
         if not self.split_data:
             raise ValueError("ERROR_01")
-        return GenerateDataset(self.train_paths, self.train_labels, self.transform, split_data=False)
+        return GenerateDataset(self.train_paths, self.transform, split_data=False)
     
     def get_test_dataset(self):
         if not self.split_data:
             raise ValueError("ERROR_02")
-        return GenerateDataset(self.test_paths, self.test_labels, self.transform, split_data=False)
+        return GenerateDataset(self.test_paths, self.transform, split_data=False)
 
     def __len__(self):
         return len(self.paths)
 
     def __getitem__(self, idx):
-        img = Image.open(self.paths[idx]).convert("RGB")
+        img_path = self.paths[idx]
+        img = Image.open(img_path).convert("RGB")
+
+        w, h = img.size
+        
         if self.transform:
             img = self.transform(img)
-        if self.labels is not None:
-            return img, self.labels[idx]
-        return img
+
+        # отримуємо бокси для зображення (припустимо, є така функція)
+        target = get_box_coordinates(parse_coordinates(get_coordinates(img_path)))
+        x1, y1, x2, y2 = target
+        target = torch.tensor([x1/w, y1/h, x2/w, y2/h], dtype=torch.float)
+        
+        return img, target
 
     
 def transform_sample(pth):
