@@ -39,7 +39,6 @@ def create_dataloader(trainds, testds):
     
     return trainloader, testloader
     
-
 class GenerateDataset(Dataset):
     def __init__(self, paths, labels=None, transform=None, split_data=False, test_size=0.2, random_state=42):
         if split_data:
@@ -60,7 +59,6 @@ class GenerateDataset(Dataset):
         
         if transform is None:
             self.transform = transforms.Compose([
-                transforms.Resize((224, 224)),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], 
                                      std=[0.229, 0.224, 0.225]),
@@ -88,12 +86,11 @@ class GenerateDataset(Dataset):
         if self.labels is not None:
             return img, self.labels[idx]
         return img
-    
+
     
 def transform_sample(pth):
     
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], 
                              std=[0.229, 0.224, 0.225]),
@@ -134,14 +131,41 @@ def parse_coordinates(coord_string):
     
     return boxes
 
+def normalize_box(box):
+    x_min = min(box['x1'], box['x2'])
+    y_min = min(box['y1'], box['y2'])
+    x_max = max(box['x1'], box['x2'])
+    y_max = max(box['y1'], box['y2'])
+    return x_min, y_min, x_max, y_max
+
+def get_box_coordinates(boxes):
+    if len(boxes) >= 1:
+        if len(boxes) == 2:
+            # нормалізуємо обидва бокси
+            norm_boxes = [normalize_box(b) for b in boxes]
+
+            x1 = min(b[0] for b in norm_boxes)
+            y1 = min(b[1] for b in norm_boxes)
+            x2 = max(b[2] for b in norm_boxes)
+            y2 = max(b[3] for b in norm_boxes)
+
+        # малюємо правильний об’єднаний бокс
+            return x1, y1, x2, y2
+        else:
+            for box in boxes:
+                x1, y1 = box['x1'], box['y1']
+                x2, y2 = box['x2'], box['y2']
+            return x1, y1, x2, y2
+                
+    
+
 def draw_boxes(image_path, boxes):
     img = cv2.imread(image_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-    for box in boxes:
-        x1, y1 = box['x1'], box['y1']
-        x2, y2 = box['x2'], box['y2']
-        cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+    
+    x1, y1, x2, y2 = get_box_coordinates(boxes)
+    
+    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
     plt.imshow(img)
     plt.axis("off")
