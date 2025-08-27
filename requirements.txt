@@ -7,3 +7,4 @@ scikit-learn
 torchvision
 glob2
 re
+tensorboard

@@ -9,6 +9,9 @@ from sklearn.model_selection import train_test_split
 from PIL import Image
 import matplotlib.pyplot as plt
 
+
+
+
 provNum, alphaNum, adNum = 38, 25, 35
 provinces = ["皖", "沪", "津", "渝", "冀", "晋", "蒙", "辽", "吉", "黑", "苏", "浙", "京", "闽", "赣", "鲁", "豫", "鄂", "湘", "粤", "桂",
              "琼", "川", "贵", "云", "藏", "陕", "甘", "青", "宁", "新", "警", "学", "O"]
@@ -17,8 +20,14 @@ alphabets = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P
 ads = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
        'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'O']
 
+
+
+
 def multi_glob(pattern_base):
     return glob.glob(os.path.join(pattern_base, "*"))     
+
+
+
 
 def collect_image_paths(base_folder, ext="*.jpg"):
     image_paths = []
@@ -26,18 +35,25 @@ def collect_image_paths(base_folder, ext="*.jpg"):
         image_paths.extend(glob.glob(os.path.join(folder, ext)))
     return image_paths
 
+
+
 def get_imgs_resolutions(path):
     s = set()
     for i in collect_image_paths(path):
         s.add(Image.open(i).size)
     return s
 
+
+
+
 def create_dataloader(trainds, testds):
     
-    trainloader = torch.utils.data.DataLoader(trainds, batch_size=64, shuffle=True)
-    testloader = torch.utils.data.DataLoader(testds, batch_size=64, shuffle=False)
+    trainloader = torch.utils.data.DataLoader(trainds, batch_size=32, shuffle=True)
+    testloader = torch.utils.data.DataLoader(testds, batch_size=32, shuffle=False)
     
     return trainloader, testloader
+    
+    
     
 # class GenerateDataset(Dataset):
 #     def __init__(self, paths, labels=None, transform=None, split_data=False, test_size=0.2, random_state=42):
@@ -86,6 +102,7 @@ def create_dataloader(trainds, testds):
 #         if self.labels is not None:
 #             return img, self.labels[idx]
 #         return img
+
 
 
 class GenerateDataset(Dataset):
@@ -138,6 +155,7 @@ class GenerateDataset(Dataset):
         return img, target
 
     
+    
 def transform_sample(pth):
     
     transform = transforms.Compose([
@@ -151,10 +169,15 @@ def transform_sample(pth):
     image = image.unsqueeze(0)
     return image
     
+    
+    
 # boxes operations and creations 
 def get_coordinates(coord_string):
     info = str(coord_string.split("\\")).split("-")
     return info[3]
+
+
+
 
 def get_plate_number(coord_string):
     info = str(coord_string.split("\\")).split("-")
@@ -164,6 +187,9 @@ def get_plate_number(coord_string):
     for ind in range(1, len(number)):
         plate += ads[int(number[ind])]
     return plate
+
+
+
 
 def parse_coordinates(coord_string):
     numbers = re.findall(r'\d+', coord_string)
@@ -181,12 +207,17 @@ def parse_coordinates(coord_string):
     
     return boxes
 
+
+
+
 def normalize_box(box):
     x_min = min(box['x1'], box['x2'])
     y_min = min(box['y1'], box['y2'])
     x_max = max(box['x1'], box['x2'])
     y_max = max(box['y1'], box['y2'])
     return x_min, y_min, x_max, y_max
+
+
 
 def get_box_coordinates(boxes):
     if len(boxes) >= 1:
@@ -206,8 +237,8 @@ def get_box_coordinates(boxes):
                 x1, y1 = box['x1'], box['y1']
                 x2, y2 = box['x2'], box['y2']
             return x1, y1, x2, y2
-                
-    
+
+
 
 def draw_boxes(image_path, boxes):
     img = cv2.imread(image_path)
@@ -225,3 +256,41 @@ boxes = [
     {'x1': 405, 'y1': 571, 'x2': 235, 'y2': 574, 'width': 170, 'height': 3},
     {'x1': 231, 'y1': 523, 'x2': 403, 'y2': 522, 'width': 172, 'height': 1}
 ]
+
+
+
+def predict_and_draw(model, image_path, device='cpu'):
+    transform = transforms.Compose([
+        transforms.Resize((180, 290)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                             std=[0.229, 0.224, 0.225])
+    ])
+    
+    img = Image.open(image_path).convert("RGB")
+    w_orig, h_orig = img.size
+    input_tensor = transform(img).unsqueeze(0).to(device)
+    
+    model.to(device)
+    model.eval()
+    
+    with torch.no_grad():
+        pred = model(input_tensor) 
+
+    pred = pred.squeeze(0).cpu()
+
+    x1 = int(pred[0].item() * w_orig)
+    y1 = int(pred[1].item() * h_orig)
+    x2 = int(pred[2].item() * w_orig)
+    y2 = int(pred[3].item() * h_orig)
+
+    img_cv = cv2.imread(image_path)
+    img_cv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
+    
+    cv2.rectangle(img_cv, (x1, y1), (x2, y2), (255, 0, 0), 2)
+
+    plt.imshow(img_cv)
+    plt.axis("off")
+    plt.show()
+    
+    return pred
