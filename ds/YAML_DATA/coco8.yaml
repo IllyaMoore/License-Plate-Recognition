@@ -1,0 +1,7 @@
+path: B:\VLPR\ds\YAML_DATA
+train: B:\VLPR\ds\YAML_DATA\images\train
+val: B:\VLPR\ds\YAML_DATA\images\val
+test: B:\VLPR\ds\YAML_DATA\images\test
+
+names:
+  0: license_plate

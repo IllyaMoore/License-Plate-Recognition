@@ -1,4 +1,10 @@
 ds/data
 ds/data.ipynb
 ds/data_splited
+ds/TensorBoard.ipynb
 .env
+ds\labels
+ds\YAML_DATA
+ds\YAML_DATA\images
+ds\YAML_DATA\labels
+VLPR\runs\detect

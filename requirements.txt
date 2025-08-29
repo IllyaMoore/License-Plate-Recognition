@@ -8,3 +8,4 @@ torchvision
 glob2
 re
 tensorboard
+ultralytics
