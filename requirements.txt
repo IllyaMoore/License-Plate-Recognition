@@ -1,11 +1,10 @@
-datasets
 torch
-pundas
-numpy
-opencv-python
-scikit-learn
 torchvision
-glob2
-re
+numpy
+pandas
+scikit-learn
+opencv-python
 tensorboard
 ultralytics
+datasets
+glob2
