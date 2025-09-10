@@ -34,6 +34,6 @@ class boxes:
         return x1, x2, y1, y2
     
     def cut_plate_numbers(coords, img):
-        return img.crop((coords))
+        return img.crop(coords)
         
         
